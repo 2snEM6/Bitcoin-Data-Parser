@@ -9,7 +9,7 @@
   "license": "MIT",
   "keywords": [],
   "scripts": {
-    "dev": "./node_modules/.bin/ts-node ./src/index.ts",
+    "dev": "npx ts-node -- --files src/index.ts",
     "describe": "npm-scripts-info",
     "build": "run-s clean && run-p build:*",
     "build:main": "tsc -p tsconfig.json",
