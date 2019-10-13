@@ -9,7 +9,7 @@
   "license": "MIT",
   "keywords": [],
   "scripts": {
-    "dev": "npx ts-node -- --files src/index.ts",
+    "dev": "npx ts-node --files src/index.ts",
     "describe": "npm-scripts-info",
     "build": "run-s clean && run-p build:*",
     "build:main": "tsc -p tsconfig.json",
@@ -49,8 +49,12 @@
     "node": ">=8.9"
   },
   "dependencies": {
-    "bitcoind": "^1.2.1",
-    "sha.js": "^2.4.11"
+    "bitcoin-core": "^3.0.0",
+    "bitcoinjs-lib": "^5.1.6",
+    "pg": "^7.12.1",
+    "pg-hstore": "^2.3.3",
+    "sequelize": "^5.19.6",
+    "varuint-bitcoin": "^1.1.2"
   },
   "devDependencies": {
     "@bitjson/npm-scripts-info": "^1.0.0",
