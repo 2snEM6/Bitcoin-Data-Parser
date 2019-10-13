@@ -1,3 +1,3 @@
-# bitcoin_bridge
+# bitcoind_bridge
 
 An HTTP API wrapper over the Bitcoind client
