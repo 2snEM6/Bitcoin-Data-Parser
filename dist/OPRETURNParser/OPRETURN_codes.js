@@ -1,0 +1,8 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+var OP_CODES;
+(function (OP_CODES) {
+    OP_CODES[OP_CODES["OP_RETURN"] = 106] = "OP_RETURN";
+})(OP_CODES || (OP_CODES = {}));
+exports.default = OP_CODES;
+//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiT1BSRVRVUk5fY29kZXMuanMiLCJzb3VyY2VSb290IjoiIiwic291cmNlcyI6WyIuLi8uLi9zcmMvT1BSRVRVUk5QYXJzZXIvT1BSRVRVUk5fY29kZXMudHMiXSwibmFtZXMiOltdLCJtYXBwaW5ncyI6Ijs7QUFBQSxJQUFLLFFBRUo7QUFGRCxXQUFLLFFBQVE7SUFDWCxtREFBZSxDQUFBO0FBQ2pCLENBQUMsRUFGSSxRQUFRLEtBQVIsUUFBUSxRQUVaO0FBRUQsa0JBQWUsUUFBUSxDQUFDIn0=

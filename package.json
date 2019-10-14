@@ -2,18 +2,15 @@
   "name": "bitcoin_bridge",
   "version": "1.0.0",
   "description": "An HTTP API wrapper over the Bitcoind client",
-  "main": "build/main/index.js",
-  "typings": "build/main/index.d.ts",
-  "module": "build/module/index.js",
+  "main": "./dist/index.js",
+  "typings": "./dist/index.d.ts",
   "repository": "https://github.com/limiaspasdaniel/bitcoind_bridge",
   "license": "MIT",
   "keywords": [],
   "scripts": {
     "dev": "npx ts-node --files src/index.ts",
     "describe": "npm-scripts-info",
-    "build": "run-s clean && run-p build:*",
-    "build:main": "tsc -p tsconfig.json",
-    "build:module": "tsc -p tsconfig.module.json",
+    "build": "tsc -p tsconfig.json",
     "fix": "run-s fix:*",
     "fix:prettier": "prettier \"src/**/*.ts\" --write",
     "fix:tslint": "tslint --fix --project .",
@@ -49,8 +46,12 @@
     "node": ">=8.9"
   },
   "dependencies": {
+    "@types/bluebird": "^3.5.28",
+    "@types/bunyan": "^1.8.6",
+    "@types/validator": "^10.11.3",
     "bitcoin-core": "^3.0.0",
     "bitcoinjs-lib": "^5.1.6",
+    "bunyan": "^1.8.12",
     "pg": "^7.12.1",
     "pg-hstore": "^2.3.3",
     "sequelize": "^5.19.6",
@@ -77,27 +78,7 @@
     "tslint-immutable": "^6.0.1",
     "typescript": "^3.5.3"
   },
-  "ava": {
-    "failFast": true,
-    "files": [
-      "build/main/**/*.spec.js"
-    ],
-    "sources": [
-      "build/main/**/*.js"
-    ]
-  },
-  "config": {
-    "commitizen": {
-      "path": "cz-conventional-changelog"
-    }
-  },
   "prettier": {
     "singleQuote": true
-  },
-  "nyc": {
-    "extends": "@istanbuljs/nyc-config-typescript",
-    "exclude": [
-      "**/*.spec.js"
-    ]
   }
 }

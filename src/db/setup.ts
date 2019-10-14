@@ -1,3 +1,4 @@
+import * as Logger from 'bunyan';
 import * as fs from "fs";
 import { DataTypes, Sequelize } from 'sequelize';
 import { promisify } from 'util';
@@ -6,32 +7,44 @@ import { OPRETURN } from './models';
 const readFile = promisify(fs.readFile);
 const readdir = promisify(fs.readdir);
 
+interface DBCredentials {
+  readonly dbName: string;
+  readonly dbUser: string;
+  readonly dbPassword: string;
+}
 
 const executeMigrations = async (sequelize: Sequelize) => {
-  const fileList = await readdir('../migrations');
+  const migrationsPath = './src/db/migrations/';
+  const fileList = await readdir(migrationsPath);
 
   for (const fileName of fileList) {
-    console.log(`Executing migration: ${fileName}`);
-    const filePath = `../migrations/${fileName}`;
+    const filePath = `${migrationsPath}${fileName}`;
     const fileContentBuffer = await readFile(filePath);
     const query = fileContentBuffer.toString('utf8');
     await sequelize.query(query);
-    console.log('Done');
   }
 };
 
-export async function initialize(): Promise<Sequelize> {
 
-  const sequelize = new Sequelize(process.env.DB_NAME, process.env.DB_USER, process.env.DB_PASSWORD, {
+export async function initialize(logger: Logger, credentials: DBCredentials): Promise<Sequelize> {
+  logger.debug('Initializing Sequelize');
+
+  const sequelize = new Sequelize(credentials.dbName, credentials.dbUser, credentials.dbPassword, {
     dialect: 'postgres',
     logging: false,
   });
 
+  logger.debug('Success');
+  logger.debug('Executing migrations');
+
   await executeMigrations(sequelize);
+
+  logger.debug('Success');
+  logger.debug('Initializing models');
 
   OPRETURN.init({
     data: {
-      type: new DataTypes.STRING(),
+      type: new DataTypes.TEXT(),
       allowNull: false,
     },
     blockHash: {
@@ -65,6 +78,13 @@ export async function initialize(): Promise<Sequelize> {
     sequelize
   });
 
+  logger.debug('Success');
+  logger.debug('Syncing database');
+
   await OPRETURN.sync();
+
+  logger.debug('Success');
+  logger.debug('Successfully initialized Sequelize');
+
   return sequelize;
 }
