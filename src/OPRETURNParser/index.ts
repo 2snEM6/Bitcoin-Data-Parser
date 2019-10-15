@@ -10,7 +10,7 @@ export {
 const logger = bunyan.createLogger({
   name: 'PARSER',
   stream: process.stdout,
-  level: process.env.LOG_LEVEL as LogLevel || 'debug'
+  level: (process.env.LOG_LEVEL as LogLevel) || 'debug'
 });
 
 const parser = new OPRETURNParser(logger, {
@@ -26,5 +26,19 @@ const parser = new OPRETURNParser(logger, {
   }
 });
 
-parser.initialize().then(() => parser.run());
+const peacefullyStop = async () => {
+  const stopped = await parser.stop();
+  if (stopped) {
+    process.exit();
+  }
+};
 
+process.on('SIGTERM', async () => {
+  return peacefullyStop();
+});
+
+process.on('SIGINT', async () => {
+  return peacefullyStop();
+});
+
+parser.initialize().then(() => parser.run());

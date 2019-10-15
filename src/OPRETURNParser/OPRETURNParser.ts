@@ -4,7 +4,7 @@ import * as Logger from 'bunyan';
 import * as fs from 'fs';
 import { DataTypes, Sequelize, UniqueConstraintError } from 'sequelize';
 import { promisify } from 'util';
-import { OPRETURN, OPRETURN as OPRETURNModel } from './models';
+import { OPRETURN, OPRETURN as OPRETURNModel } from '../db/models';
 import OP_CODES from './OPRETURN_codes';
 
 const readFile = promisify(fs.readFile);
@@ -43,12 +43,12 @@ export interface OPReturnParserOptions {
 
 interface ParsingLimits {
   start: {
-    hash: string,
-    height: number
+    hash: string;
+    height: number;
   };
   end: {
-    hash: string,
-    height: number
+    hash: string;
+    height: number;
   };
 }
 
@@ -122,15 +122,18 @@ export class OPRETURNParser {
     this.logger.debug('Successfully initialized Sequelize');
   }
 
-  public async stop(): Promise<void> {
+  public async stop(): Promise<boolean> {
     if (!this.enabled) {
-      return this.logger.info('Unable to stop Parser. Parser is not running');
+      this.logger.info('Unable to stop Parser. Parser is not running');
+      return false;
     }
     this.enabled = false;
     await this.database.close();
     this.logger.info('Attempting to stop parser...');
     this.logger.debug('Database connection closed...');
     this.logger.info('Parser has been stopped successfully');
+
+    return true;
   }
 
   public async run(): Promise<void> {
@@ -155,7 +158,10 @@ export class OPRETURNParser {
 
         try {
           await OPRETURNModel.bulkCreate(opReturns); // 1 database tx required for all possible OP_RETURNS within a block
-          this.logger.debug({ hash: currentBlockHash, height: block.height }, `Parsing block with height ${block.height}`);
+          this.logger.debug(
+            { hash: currentBlockHash, height: block.height },
+            `Parsing block with height ${block.height}`
+          );
         } catch (error) {
           if (!(error instanceof UniqueConstraintError)) {
             throw error;
@@ -184,41 +190,58 @@ export class OPRETURNParser {
     }
   }
 
-  private isParsingFromScratch(lowestIndexedHeight: number, highestIndexedHeight: number): boolean {
-    return (Number.isNaN(lowestIndexedHeight) && Number.isNaN(highestIndexedHeight));
+  private isParsingFromScratch(
+    lowestIndexedHeight: number,
+    highestIndexedHeight: number
+  ): boolean {
+    return (
+      Number.isNaN(lowestIndexedHeight) && Number.isNaN(highestIndexedHeight)
+    );
   }
 
-  private parsingIsComplete(lowestIndexedHeight: number, indexingHeightLimit: number): boolean {
+  private parsingIsComplete(
+    lowestIndexedHeight: number,
+    indexingHeightLimit: number
+  ): boolean {
     return lowestIndexedHeight === indexingHeightLimit;
   }
 
   private async computeParsingLimits(): Promise<ParsingLimits> {
     const defaultIndexingLimits = {
       height: networkConfig[this.network].indexingLimit,
-      hash: await this.rpc.getBlockHash(networkConfig[this.network].indexingLimit)
+      hash: await this.rpc.getBlockHash(
+        networkConfig[this.network].indexingLimit
+      )
     };
 
     const lowestIndexedHeight = (await OPRETURNModel.min('height')) as number;
     const highestIndexedHeight = (await OPRETURNModel.max('height')) as number;
     const bestBlockHash = await this.rpc.getBestBlockHash();
-    const bestBlockHeight = ((await this.rpc.getBlock(bestBlockHash, 2)) as any).height;
+    const bestBlockHeight = ((await this.rpc.getBlock(bestBlockHash, 2)) as any)
+      .height;
 
     if (bestBlockHeight < defaultIndexingLimits.height) {
-      throw new Error(`Current best block height is below the desired indexing limit of ${defaultIndexingLimits.height}. Wait for synchronization`);
+      throw new Error(
+        `Current best block height is below the desired indexing limit of ${defaultIndexingLimits.height}. Wait for synchronization`
+      );
     }
 
     if (this.isParsingFromScratch(lowestIndexedHeight, highestIndexedHeight)) {
       return {
         start: {
           height: bestBlockHeight,
-          hash: bestBlockHash,
+          hash: bestBlockHash
         },
         end: defaultIndexingLimits
       };
     }
 
-    if (this.parsingIsComplete(lowestIndexedHeight, defaultIndexingLimits.height)) {
-      const highestIndexedHash = await this.rpc.getBlockHash(highestIndexedHeight);
+    if (
+      this.parsingIsComplete(lowestIndexedHeight, defaultIndexingLimits.height)
+    ) {
+      const highestIndexedHash = await this.rpc.getBlockHash(
+        highestIndexedHeight
+      );
       return {
         start: {
           height: bestBlockHeight,
