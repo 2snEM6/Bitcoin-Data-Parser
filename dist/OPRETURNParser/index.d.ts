@@ -1,1 +1,1 @@
-export { parse } from "./OPRETURNParser";
+export { OPReturnParserOptions, OPRETURNParser, network } from './OPRETURNParser';

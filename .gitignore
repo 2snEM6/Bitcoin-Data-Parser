@@ -1,8 +1,11 @@
 node_modules
 build
+dist/*
+dist
 test
 src/**.js
 .idea/*
+
 
 coverage
 .nyc_output

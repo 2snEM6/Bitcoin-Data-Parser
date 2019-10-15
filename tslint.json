@@ -15,7 +15,6 @@
     "typedef": [true, "call-signature"],
 
     // Immutability rules
-    "readonly-keyword": true,
     "readonly-array": false,
     "no-let": false,
     "no-object-mutation": true,
@@ -23,8 +22,6 @@
     "no-method-signature": true,
 
     // Functional style rules
-    "no-this": true,
-    "no-class": true,
     "no-mixed-interface": true,
     "no-expression-statement": false,
     "no-if-statement": false
