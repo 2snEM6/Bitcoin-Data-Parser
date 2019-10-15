@@ -41,6 +41,17 @@ export interface OPReturnParserOptions {
   };
 }
 
+interface ParsingLimits {
+  start: {
+    hash: string,
+    height: number
+  };
+  end: {
+    hash: string,
+    height: number
+  };
+}
+
 export type network = 'testnet' | 'mainnet';
 
 export class OPRETURNParser {
@@ -126,65 +137,30 @@ export class OPRETURNParser {
     this.enabled = true;
 
     try {
-      const { indexingLimit } = networkConfig[this.network];
-      const lowestIndexedHeight = (await OPRETURNModel.min('height')) as number;
+      const parsingLimits: ParsingLimits = await this.computeParsingLimits();
 
-      this.logger.debug(
-        { height: lowestIndexedHeight },
-        `Lowest indexed block height: ${lowestIndexedHeight}`
-      );
+      this.logger.debug({ parsingLimits }, 'Begin parsing');
 
-      const limitHeight = Number.isNaN(lowestIndexedHeight)
-        ? indexingLimit
-        : Math.min(indexingLimit, lowestIndexedHeight);
-
-      this.logger.debug(
-        { height: limitHeight },
-        `Limit height to index: ${limitHeight}`
-      );
-
-      let currentBlockHash = await this.rpc.getBestBlockHash(); // Load from ZeroMQ
-      const currentBestBlock = (await this.rpc.getBlock(
-        currentBlockHash,
-        2
-      )) as any;
-
-      this.logger.debug(
-        { height: currentBestBlock.height },
-        `Current best block height is ${currentBestBlock.height}`
-      );
-      this.logger.debug(
-        { hash: currentBlockHash },
-        `Current best block hash is ${currentBlockHash}`
-      );
-
-      if (currentBestBlock.height < limitHeight) {
-        return this.logger.info(
-          { height: currentBestBlock.height, indexingHeightLimit: limitHeight },
-          `Current best block height is below the desired indexing limit of ${limitHeight}. Wait for synchronization`
-        );
-      }
-
-      const limitBlockHash = await this.rpc.getBlockHash(limitHeight);
-
-      this.logger.debug({ startingHash: currentBlockHash }, 'Begin parsing');
+      const limitBlockHash = parsingLimits.end.hash;
+      let currentBlockHash = parsingLimits.start.hash;
 
       while (this.enabled && currentBlockHash !== limitBlockHash) {
         const block = (await this.rpc.getBlock(currentBlockHash, 2)) as any;
-
         const opReturns = this.parseOPRETURNForBlock(block);
 
         this.logger.trace(
           { opReturns: opReturns.map(op => op.data) },
           'OPReturns ready to be saved'
         );
+
         try {
           await OPRETURNModel.bulkCreate(opReturns); // 1 database tx required for all possible OP_RETURNS within a block
-          this.logger.debug({ blockHash: currentBlockHash }, 'Parsing block');
+          this.logger.debug({ hash: currentBlockHash, height: block.height }, `Parsing block with height ${block.height}`);
         } catch (error) {
           if (!(error instanceof UniqueConstraintError)) {
             throw error;
           }
+
           this.logger.debug(
             { blockHash: currentBlockHash },
             'Block has already been parsed. Skipping...'
@@ -196,16 +172,80 @@ export class OPRETURNParser {
 
       if (currentBlockHash === limitBlockHash) {
         this.logger.info(
-          { lastHash: currentBlockHash, limitHeight: indexingLimit },
+          { lastHash: currentBlockHash, limitHeight: parsingLimits.end.height },
           'Parsing completed. Reached limit indexing height'
         );
       }
+    } catch (error) {
+      this.logger.error(error.message);
+      throw error;
     } finally {
       this.enabled = false;
     }
   }
 
+  private isParsingFromScratch(lowestIndexedHeight: number, highestIndexedHeight: number): boolean {
+    return (Number.isNaN(lowestIndexedHeight) && Number.isNaN(highestIndexedHeight));
+  }
+
+  private parsingIsComplete(lowestIndexedHeight: number, indexingHeightLimit: number): boolean {
+    return lowestIndexedHeight === indexingHeightLimit;
+  }
+
+  private async computeParsingLimits(): Promise<ParsingLimits> {
+    const defaultIndexingLimits = {
+      height: networkConfig[this.network].indexingLimit,
+      hash: await this.rpc.getBlockHash(networkConfig[this.network].indexingLimit)
+    };
+
+    const lowestIndexedHeight = (await OPRETURNModel.min('height')) as number;
+    const highestIndexedHeight = (await OPRETURNModel.max('height')) as number;
+    const bestBlockHash = await this.rpc.getBestBlockHash();
+    const bestBlockHeight = ((await this.rpc.getBlock(bestBlockHash, 2)) as any).height;
+
+    if (bestBlockHeight < defaultIndexingLimits.height) {
+      throw new Error(`Current best block height is below the desired indexing limit of ${defaultIndexingLimits.height}. Wait for synchronization`);
+    }
+
+    if (this.isParsingFromScratch(lowestIndexedHeight, highestIndexedHeight)) {
+      return {
+        start: {
+          height: bestBlockHeight,
+          hash: bestBlockHash,
+        },
+        end: defaultIndexingLimits
+      };
+    }
+
+    if (this.parsingIsComplete(lowestIndexedHeight, defaultIndexingLimits.height)) {
+      const highestIndexedHash = await this.rpc.getBlockHash(highestIndexedHeight);
+      return {
+        start: {
+          height: bestBlockHeight,
+          hash: bestBlockHash
+        },
+        end: {
+          height: highestIndexedHeight,
+          hash: highestIndexedHash
+        }
+      };
+    }
+
+    const lowestIndexedHash = await this.rpc.getBlockHash(lowestIndexedHeight);
+
+    this.logger.debug('Initial parsing is not complete. Continuing...');
+
+    return {
+      start: {
+        height: lowestIndexedHeight,
+        hash: lowestIndexedHash
+      },
+      end: defaultIndexingLimits
+    };
+  }
+
   private async executeMigrations(): Promise<void> {
+    this.logger.debug('Executing migrations...');
     const migrationsPath = './src/OPRETURNParser/migrations/';
     const fileList = await readdir(migrationsPath);
 
@@ -215,6 +255,7 @@ export class OPRETURNParser {
       const query = fileContentBuffer.toString('utf8');
       await this.database.query(query);
     }
+    this.logger.debug('Migrations executed succesfully');
   }
 
   private initializeDatabaseClient(credentials: any): Sequelize {
