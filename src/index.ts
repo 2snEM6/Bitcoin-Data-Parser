@@ -45,13 +45,9 @@ const run = async () => {
     process.exit();
   });
 
-  applicationLogger.info('Parsing OP_RETURN data from the Bitcoin blockchain');
+  applicationLogger.info(`Parsing OP_RETURN data from the Bitcoin ${process.env.NETWORK.toUpperCase()}`);
 
   parser.run();
-
-  setTimeout(() => {
-    parser.stop();
-  }, 10000);
 };
 
 run();

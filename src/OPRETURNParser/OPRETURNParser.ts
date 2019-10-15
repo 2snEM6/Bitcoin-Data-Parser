@@ -125,12 +125,25 @@ export class OPRETURNParser {
 
     try {
       const { indexingLimit } = networkConfig[this.network];
-      const lowestHeight = await OPRETURNModel.min("height") as number;
+      const lowestIndexedHeight = await OPRETURNModel.min("height") as number;
 
-      const limit = Math.min(indexingLimit, lowestHeight);
+      this.logger.debug({ height: lowestIndexedHeight }, `Lowest indexed block height: ${lowestIndexedHeight}`);
 
-      const limitBlockHash = await this.rpc.getBlockHash(limit);
-      let currentBlockHash = await this.rpc.getBestBlockHash();// Load from ZeroMQ
+      const limitHeight = Number.isNaN(lowestIndexedHeight) ? indexingLimit : Math.min(indexingLimit, lowestIndexedHeight);
+
+      this.logger.debug({ height: limitHeight }, `Limit height to index: ${limitHeight}`);
+
+      let currentBlockHash = await this.rpc.getBestBlockHash();// Load from ZeroMQ 
+      const currentBestBlock = await this.rpc.getBlock(currentBlockHash, 2) as any;
+      
+      this.logger.debug({ height: currentBestBlock.height}, `Current best block height is ${currentBestBlock.height}`);
+      this.logger.debug({ hash: currentBlockHash }, `Current best block hash is ${currentBlockHash}`);
+
+      if (currentBestBlock.height < limitHeight) {
+        return this.logger.info({ height: currentBestBlock.height, indexingHeightLimit: limitHeight}, `Current best block height is below the desired indexing limit of ${limitHeight}. Wait for synchronization`);
+      }
+
+      const limitBlockHash = await this.rpc.getBlockHash(limitHeight);
 
       this.logger.debug({ startingHash: currentBlockHash }, 'Begin parsing');
 
