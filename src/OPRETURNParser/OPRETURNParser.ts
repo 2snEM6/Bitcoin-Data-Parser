@@ -1,4 +1,4 @@
-import BitcoinCoreClient from "bitcoin-core";
+import BitcoinCoreClient from 'bitcoin-core';
 import { script as Script } from 'bitcoinjs-lib';
 import * as Logger from 'bunyan';
 import * as fs from 'fs';
@@ -9,7 +9,6 @@ import OP_CODES from './OPRETURN_codes';
 
 const readFile = promisify(fs.readFile);
 const readdir = promisify(fs.readdir);
-
 
 const networkConfig = {
   testnet: {
@@ -64,41 +63,44 @@ export class OPRETURNParser {
   public async initialize(): Promise<void> {
     await this.executeMigrations();
 
-    OPRETURN.init({
-      data: {
-        type: new DataTypes.TEXT(),
-        allowNull: false,
-      },
-      blockHash: {
-        primaryKey: true,
-        type: new DataTypes.STRING(),
-        allowNull: false,
-      },
-      txHash: {
-        primaryKey: true,
-        type: new DataTypes.STRING(),
-        allowNull: false
-      },
-      utxoIdx: {
-        primaryKey: true,
-        type: new DataTypes.INTEGER(),
-        allowNull: false
-      },
-      height: {
-        type: new DataTypes.INTEGER(),
-        allowNull: false
-      }
-    }, {
-      indexes: [
-        {
-          fields: ['data'],
-          using: 'gin',
-          operator: 'gin_trgm_ops'
+    OPRETURN.init(
+      {
+        data: {
+          type: new DataTypes.TEXT(),
+          allowNull: false
+        },
+        blockHash: {
+          primaryKey: true,
+          type: new DataTypes.STRING(),
+          allowNull: false
+        },
+        txHash: {
+          primaryKey: true,
+          type: new DataTypes.STRING(),
+          allowNull: false
+        },
+        utxoIdx: {
+          primaryKey: true,
+          type: new DataTypes.INTEGER(),
+          allowNull: false
+        },
+        height: {
+          type: new DataTypes.INTEGER(),
+          allowNull: false
         }
-      ],
-      tableName: 'opreturns',
-      sequelize: this.database
-    });
+      },
+      {
+        indexes: [
+          {
+            fields: ['data'],
+            using: 'gin',
+            operator: 'gin_trgm_ops'
+          }
+        ],
+        tableName: 'opreturns',
+        sequelize: this.database
+      }
+    );
 
     this.logger.debug('Success');
     this.logger.debug('Syncing database');
@@ -125,22 +127,42 @@ export class OPRETURNParser {
 
     try {
       const { indexingLimit } = networkConfig[this.network];
-      const lowestIndexedHeight = await OPRETURNModel.min("height") as number;
+      const lowestIndexedHeight = (await OPRETURNModel.min('height')) as number;
 
-      this.logger.debug({ height: lowestIndexedHeight }, `Lowest indexed block height: ${lowestIndexedHeight}`);
+      this.logger.debug(
+        { height: lowestIndexedHeight },
+        `Lowest indexed block height: ${lowestIndexedHeight}`
+      );
 
-      const limitHeight = Number.isNaN(lowestIndexedHeight) ? indexingLimit : Math.min(indexingLimit, lowestIndexedHeight);
+      const limitHeight = Number.isNaN(lowestIndexedHeight)
+        ? indexingLimit
+        : Math.min(indexingLimit, lowestIndexedHeight);
 
-      this.logger.debug({ height: limitHeight }, `Limit height to index: ${limitHeight}`);
+      this.logger.debug(
+        { height: limitHeight },
+        `Limit height to index: ${limitHeight}`
+      );
 
-      let currentBlockHash = await this.rpc.getBestBlockHash();// Load from ZeroMQ 
-      const currentBestBlock = await this.rpc.getBlock(currentBlockHash, 2) as any;
-      
-      this.logger.debug({ height: currentBestBlock.height}, `Current best block height is ${currentBestBlock.height}`);
-      this.logger.debug({ hash: currentBlockHash }, `Current best block hash is ${currentBlockHash}`);
+      let currentBlockHash = await this.rpc.getBestBlockHash(); // Load from ZeroMQ
+      const currentBestBlock = (await this.rpc.getBlock(
+        currentBlockHash,
+        2
+      )) as any;
+
+      this.logger.debug(
+        { height: currentBestBlock.height },
+        `Current best block height is ${currentBestBlock.height}`
+      );
+      this.logger.debug(
+        { hash: currentBlockHash },
+        `Current best block hash is ${currentBlockHash}`
+      );
 
       if (currentBestBlock.height < limitHeight) {
-        return this.logger.info({ height: currentBestBlock.height, indexingHeightLimit: limitHeight}, `Current best block height is below the desired indexing limit of ${limitHeight}. Wait for synchronization`);
+        return this.logger.info(
+          { height: currentBestBlock.height, indexingHeightLimit: limitHeight },
+          `Current best block height is below the desired indexing limit of ${limitHeight}. Wait for synchronization`
+        );
       }
 
       const limitBlockHash = await this.rpc.getBlockHash(limitHeight);
@@ -148,11 +170,14 @@ export class OPRETURNParser {
       this.logger.debug({ startingHash: currentBlockHash }, 'Begin parsing');
 
       while (this.enabled && currentBlockHash !== limitBlockHash) {
-        const block = await this.rpc.getBlock(currentBlockHash, 2) as any;
+        const block = (await this.rpc.getBlock(currentBlockHash, 2)) as any;
 
         const opReturns = this.parseOPRETURNForBlock(block);
 
-        this.logger.trace({ opReturns: opReturns.map(op => op.data) }, 'OPReturns ready to be saved');
+        this.logger.trace(
+          { opReturns: opReturns.map(op => op.data) },
+          'OPReturns ready to be saved'
+        );
         try {
           await OPRETURNModel.bulkCreate(opReturns); // 1 database tx required for all possible OP_RETURNS within a block
           this.logger.debug({ blockHash: currentBlockHash }, 'Parsing block');
@@ -160,14 +185,20 @@ export class OPRETURNParser {
           if (!(error instanceof UniqueConstraintError)) {
             throw error;
           }
-          this.logger.debug({ blockHash: currentBlockHash }, 'Block has already been parsed. Skipping...');
+          this.logger.debug(
+            { blockHash: currentBlockHash },
+            'Block has already been parsed. Skipping...'
+          );
         }
 
         currentBlockHash = block.previousblockhash;
       }
 
       if (currentBlockHash === limitBlockHash) {
-        this.logger.info({ lastHash: currentBlockHash, limitHeight: indexingLimit }, 'Parsing completed. Reached limit indexing height');
+        this.logger.info(
+          { lastHash: currentBlockHash, limitHeight: indexingLimit },
+          'Parsing completed. Reached limit indexing height'
+        );
       }
     } finally {
       this.enabled = false;
@@ -186,12 +217,16 @@ export class OPRETURNParser {
     }
   }
 
-
   private initializeDatabaseClient(credentials: any): Sequelize {
-    return new Sequelize(credentials.name, credentials.user, credentials.password, {
-      dialect: 'postgres',
-      logging: false,
-    });
+    return new Sequelize(
+      credentials.name,
+      credentials.user,
+      credentials.password,
+      {
+        dialect: 'postgres',
+        logging: false
+      }
+    );
   }
 
   private initializeRPCClient(credentials: any): BitcoinCoreClient {
@@ -201,12 +236,21 @@ export class OPRETURNParser {
   private parseOPRETURNForTx(tx: any): any[] {
     const opReturns = [];
     for (const vout of tx.vout) {
-      if (vout.scriptPubKey.type !== 'nonstandard') { // Skipping non-standard scripts
-        const parsedScript = Script.decompile(Buffer.from(vout.scriptPubKey.hex, 'hex'));
-        if (parsedScript.length && parsedScript[0] && parsedScript[1] && parsedScript[0] === OP_CODES.OP_RETURN) {
-          const text = typeof parsedScript[1] === 'number'
-            ? (parsedScript[1] as number).toString()
-            : (parsedScript[1] as Buffer).toString('utf8');
+      if (vout.scriptPubKey.type !== 'nonstandard') {
+        // Skipping non-standard scripts
+        const parsedScript = Script.decompile(
+          Buffer.from(vout.scriptPubKey.hex, 'hex')
+        );
+        if (
+          parsedScript.length &&
+          parsedScript[0] &&
+          parsedScript[1] &&
+          parsedScript[0] === OP_CODES.OP_RETURN
+        ) {
+          const text =
+            typeof parsedScript[1] === 'number'
+              ? (parsedScript[1] as number).toString()
+              : (parsedScript[1] as Buffer).toString('utf8');
 
           opReturns.push({
             data: text,
@@ -220,7 +264,7 @@ export class OPRETURNParser {
   }
 
   private parseOPRETURNForBlock(block: any): OPRETURNData[] {
-    const opReturns : OPRETURNData[] = [];
+    const opReturns: OPRETURNData[] = [];
 
     for (const tx of block.tx) {
       const opReturnDataList = this.parseOPRETURNForTx(tx);
@@ -230,7 +274,7 @@ export class OPRETURNParser {
           ...opReturnData,
           blockHash: block.hash,
           txHash: tx.txid,
-          height: block.height,
+          height: block.height
         });
       }
     }

@@ -1,4 +1,4 @@
-enum OP_CODES  {
+enum OP_CODES {
   OP_RETURN = 106
 }
 

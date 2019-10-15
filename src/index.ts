@@ -1,26 +1,34 @@
 import assert from 'assert';
 import bunyan, { LogLevel } from 'bunyan';
-import { network, OPRETURNParser } from "./OPRETURNParser";
+import { network, OPRETURNParser } from './OPRETURNParser';
+import * as cp from 'child_process';
 
 const run = async () => {
-  const loggingLevel = process.env.LOG_LEVEL || 'trace';
+  const loggingLevel = process.env.LOG_LEVEL || 'info';
   assert(process.env.DB_NAME);
   assert(process.env.DB_USER);
   assert(process.env.DB_PASSWORD);
   assert(process.env.NETWORK);
 
+
+
   const applicationLogger = bunyan.createLogger({
-    scope: "APPLICATION",
-    name: "OPRETURNParser",
+    scope: 'APPLICATION',
+    name: 'OPRETURNParser',
     stream: process.stdout,
     level: loggingLevel as LogLevel
   });
 
-  const parserLogger = applicationLogger.child({
-    scope: "PARSER"
-  });
-
   applicationLogger.info('Application started');
+
+
+  const OPRETURNProcess = cp.fork('./OPRETURNParser');
+
+
+
+  const parserLogger = applicationLogger.child({
+    scope: 'PARSER'
+  });
 
   const parser = new OPRETURNParser(parserLogger, {
     database: {
@@ -39,13 +47,15 @@ const run = async () => {
 
   process.on('SIGINT', async () => {
     applicationLogger.info('Cleaning up and exiting the application...');
-    applicationLogger.debug("Caught interrupt signal");
+    applicationLogger.debug('Caught interrupt signal');
 
     await parser.stop();
     process.exit();
   });
 
-  applicationLogger.info(`Parsing OP_RETURN data from the Bitcoin ${process.env.NETWORK.toUpperCase()}`);
+  applicationLogger.info(
+    `Parsing OP_RETURN data from the Bitcoin ${process.env.NETWORK.toUpperCase()}`
+  );
 
   parser.run();
 };
