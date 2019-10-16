@@ -2,28 +2,30 @@
   "name": "opreturn_parser",
   "version": "1.0.0",
   "description": "An OP_RETURN data parser and search for Bitcoin",
-	"author": "Daniel Limia Aspas <limiaspasdaniel@gmail.com>",
+  "author": "Daniel Limia Aspas <limiaspasdaniel@gmail.com>",
   "main": "./dist/index.js",
   "typings": "./dist/index.d.ts",
-	"homepage": "https://github.com/limiaspasdaniel/bitcoind_bridge#readme",
-	"repository": "https://github.com/limiaspasdaniel/bitcoind_bridge",
+  "homepage": "https://github.com/limiaspasdaniel/bitcoind_bridge#readme",
+  "repository": "https://github.com/limiaspasdaniel/bitcoind_bridge",
   "license": "MIT",
   "keywords": [
     "bitcoind",
     "OP_RETURN",
-		"bitcoin"
+    "bitcoin"
   ],
   "scripts": {
     "dev": "npx ts-node --files src/index.ts",
-    "describe": "npm-scripts-info",
     "build": "tsc -p tsconfig.json",
     "fix:prettier": "prettier \"src/**/*.ts\" --write",
-    "fix:tslint": "tslint --fix --project ."
+    "fix:tslint": "tslint --fix --project .",
+		"test": "npx run jest"
   },
   "scripts-info": {
+    "dev": "Run the application using ts-node",
     "build": "Clean and rebuild the project",
-    "fix": "Try to automatically fix any linting problems",
-    "test": "Lint and unit test the project"
+    "fix:prettier": "Try to automatically fix any prettier linting problems",
+    "fix:tslint": "Try to automatically fix any tslint linting problems",
+    "test": "Run Jest tests"
   },
   "husky": {
     "hooks": {
@@ -34,30 +36,37 @@
     "node": ">=10.14"
   },
   "dependencies": {
-    "bitcoin-core": "^3.0.0",
-    "bitcoinjs-lib": "^5.1.6",
-    "bunyan": "^1.8.12",
-    "express": "^4.17.1",
-    "pg": "^7.12.1",
-    "pg-hstore": "^2.3.3",
-    "sequelize": "^5.19.6"
+    "axios": "0.19.0",
+    "better-queue": "3.8.10",
+    "bitcoin-core": "3.0.0",
+    "bitcoinjs-lib": "5.1.6",
+    "bunyan": "1.8.12",
+    "express": "4.17.1",
+    "pg": "7.12.1",
+    "pg-hstore": "2.3.3",
+    "sequelize": "5.19.6"
   },
   "devDependencies": {
-		"@types/bluebird": "^3.5.28",
-		"@types/bunyan": "^1.8.6",
-		"@types/validator": "^10.11.3",
-    "@bitjson/npm-scripts-info": "^1.0.0",
-    "@bitjson/typedoc": "^0.15.0-0",
-    "@types/express": "^4.17.1",
-    "@types/node": "^12.7.12",
-    "husky": "^3.0.9",
-    "npm-run-all": "^4.1.5",
-    "nyc": "^14.1.1",
-    "prettier": "^1.18.2",
-    "ts-node": "^8.4.1",
-    "tslint": "^5.18.0",
-    "tslint-config-prettier": "^1.18.0",
-    "tslint-immutable": "^6.0.1",
-    "typescript": "^3.5.3"
+    "@bitjson/npm-scripts-info": "1.0.0",
+    "@bitjson/typedoc": "0.15.0-0",
+    "@types/better-queue": "3.8.1",
+    "@types/bluebird": "3.5.28",
+    "@types/bunyan": "1.8.6",
+    "@types/express": "4.17.1",
+    "@types/jest": "24.0.19",
+    "@types/node": "12.7.12",
+    "@types/validator": "10.11.3",
+		"@types/axios": "0.14.0",
+		"husky": "3.0.9",
+    "jest": "24.9.0",
+    "npm-run-all": "4.1.5",
+    "nyc": "14.1.1",
+    "prettier": "1.18.2",
+    "ts-jest": "24.1.0",
+    "ts-node": "8.4.1",
+    "tslint": "5.18.0",
+    "tslint-config-prettier": "1.18.0",
+    "tslint-immutable": "6.0.1",
+    "typescript": "3.5.3"
   }
 }

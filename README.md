@@ -54,6 +54,13 @@ Start the application
 $ node dist/index.js | npx bunyan -o short
 ```
 
+Open `http://localhost:8080/opreturn/:data` and replace `:data` with the content you
+wish to search for on the Bitcoin chain. 
+
+If you want to set another port, you can do so by creating an environment variable `PORT` before
+running the application
+
+
 ### Further improvements
 
 Parsing performance can be improved by:
