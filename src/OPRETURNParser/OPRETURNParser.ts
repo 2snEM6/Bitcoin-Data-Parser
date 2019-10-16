@@ -139,9 +139,12 @@ export class OPRETURNParser {
   public async run(): Promise<void> {
     this.enabled = true;
 
+    this.logger.info('OP_RETURN Parser service started');
+
     try {
       const parsingLimits: ParsingLimits = await this.computeParsingLimits();
 
+			this.logger.info('Parsing OP_RETURN data');
       this.logger.debug({ parsingLimits }, 'Begin parsing');
 
       const limitBlockHash = parsingLimits.end.hash;
@@ -186,6 +189,7 @@ export class OPRETURNParser {
       this.logger.error(error.message);
       throw error;
     } finally {
+    	this.logger.info('OP_RETURN Parser task finished');
       this.enabled = false;
     }
   }
@@ -207,6 +211,19 @@ export class OPRETURNParser {
   }
 
   private async computeParsingLimits(): Promise<ParsingLimits> {
+    const bestBlockHash = await this.rpc.getBestBlockHash();
+    const bestBlockHeight = ((await this.rpc.getBlock(bestBlockHash, 2)) as any)
+      .height;
+
+    this.logger.debug({ hash: bestBlockHash }, `Best block hash is ${bestBlockHash}`);
+    this.logger.debug({ height: bestBlockHeight }, `Best block height is ${bestBlockHeight}`);
+
+    if (bestBlockHeight < networkConfig[this.network].indexingLimit) {
+      throw new Error(
+        `Current best block height ${bestBlockHeight} is below the desired indexing limit of ${networkConfig[this.network].indexingLimit}. Wait for synchronization`
+      );
+    }
+
     const defaultIndexingLimits = {
       height: networkConfig[this.network].indexingLimit,
       hash: await this.rpc.getBlockHash(
@@ -216,15 +233,9 @@ export class OPRETURNParser {
 
     const lowestIndexedHeight = (await OPRETURNModel.min('height')) as number;
     const highestIndexedHeight = (await OPRETURNModel.max('height')) as number;
-    const bestBlockHash = await this.rpc.getBestBlockHash();
-    const bestBlockHeight = ((await this.rpc.getBlock(bestBlockHash, 2)) as any)
-      .height;
 
-    if (bestBlockHeight < defaultIndexingLimits.height) {
-      throw new Error(
-        `Current best block height is below the desired indexing limit of ${defaultIndexingLimits.height}. Wait for synchronization`
-      );
-    }
+    this.logger.debug({ height: lowestIndexedHeight }, `Lowest indexed height is ${lowestIndexedHeight}`);
+    this.logger.debug({ height: highestIndexedHeight }, `Highest indexed height is ${highestIndexedHeight}`);
 
     if (this.isParsingFromScratch(lowestIndexedHeight, highestIndexedHeight)) {
       return {

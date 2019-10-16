@@ -1,2 +1,19 @@
 # package.json is formatted by package managers, so we ignore it here
 package.json
+# Files
+LICENSE
+.gitkeep
+
+# rc files
+.*rc
+## ignore files
+.*ignore
+
+# Ignore extensions
+*.png
+*.sql
+*.sh
+
+# project specific paths
+dist/
+.github/

@@ -53,3 +53,12 @@ Start the application
 ```
 $ node dist/index.js | npx bunyan -o short
 ```
+
+### Further improvements
+
+Parsing performance can be improved by:
+- Deserializing blocks manually instead of using bitcoinjs and only retrieving the information needed
+- Splitting parsing workload across multiple worker threads
+
+Relaibility can be improved by:
+- Using PM2 or any other process manager for hot reloading
