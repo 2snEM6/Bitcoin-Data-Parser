@@ -6,11 +6,11 @@
 
 Before running the application, the following dependencies need to be installed:
 
-| Dependencies     | Version |
-| ---------------- | ------- |
-| NodeJS           | 10.15+  |
-| PostgreSQL       | 10+     |
-| Bitcoind         | 0.18.1  |
+| Dependencies | Version |
+| ------------ | ------- |
+| NodeJS       | 10.15+  |
+| PostgreSQL   | 10+     |
+| Bitcoind     | 0.18.1  |
 
 ### Setup
 
@@ -19,14 +19,14 @@ Using psql or any other PostgreSQL client, create a new database:
 ```
 $ createdb parser
 ```
+
 Then, install NPM dependencies:
 
 ```
 $ npm install
 ```
 
-NOTE: In order for the parser to run, the RPC API has to be enabled on Bitcoind. 
-
+NOTE: In order for the parser to run, the RPC API has to be enabled on Bitcoind.
 
 ### Usage
 
@@ -55,17 +55,22 @@ $ node dist/index.js | npx bunyan -o short
 ```
 
 Open `http://localhost:8080/opreturn/:data` and replace `:data` with the content you
-wish to search for on the Bitcoin chain. 
+wish to search for on the Bitcoin chain.
 
 If you want to set another port, you can do so by creating an environment variable `PORT` before
 running the application
 
+### Testing
+
+Refer tho [this](./src/test/README.md) readme.
 
 ### Further improvements
 
 Parsing performance can be improved by:
+
 - Deserializing blocks manually instead of using bitcoinjs and only retrieving the information needed
 - Splitting parsing workload across multiple worker threads
 
 Relaibility can be improved by:
+
 - Using PM2 or any other process manager for hot reloading
