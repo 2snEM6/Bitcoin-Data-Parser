@@ -61,7 +61,7 @@ Before running the application, the following dependencies need to be installed:
 | PostgreSQL   | 10+     |
 | Bitcoind     | 0.18.1  |
 
-### Setup
+#### Setup
 
 Using psql or any other PostgreSQL client, create a new database:
 
@@ -77,12 +77,12 @@ $ npm install
 
 NOTE: For to the parser to run, the RPC API has to be enabled on Bitcoind.
 
-### Usage
+#### Run
 
 The following environment variables need to be set before starting the application:
 
-- DB_USER:
-- DB_NAME:
+- DB_USER
+- DB_NAME
 - DB_PASSWORD
 - RPC_USERNAME
 - RPC_PASSWORD
@@ -107,12 +107,10 @@ $ node dist/index.js | npx bunyan -o short
 Open `http://localhost:8080/opreturn/:data` and replace `:data` with the content you
 wish to search for on the Bitcoin chain.
 
-If you want to set another port, you can do so by creating an environment variable `PORT` before
+If you want to set another port for the webserver, you can do so by creating an environment variable `PORT` before
 running the application
 
-### Testing
-
-# Testing
+## Testing
 
 To run tests simply run:
 
@@ -120,21 +118,21 @@ To run tests simply run:
 $ npm run test
 ```
 
-### Functional tests
+#### Functional tests
 
 Very simple functional test have been implemented to check whether the API
-returns the correct JSON payload when /opreturn/\${data} is called.
+returns the correct JSON payload when `/opreturn/${data}` is called.
 
 **NOTE**: In order for the functional tests to work, an application instance must be
 running on port `8080`
 
-### Unit tests
+#### Unit tests
 
 Unit tests are important, and they specially add value when working in a team environment.
 Due to lack of time and the individual nature of the project I didn't make use of them.
 However a clear showcase of how I approach unit testing can be found on my [Github profile](https://github.com/limiaspasdaniel)
 
-### Further improvements
+## Further improvements
 
 Parsing performance can be improved by:
 
